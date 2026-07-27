@@ -1,0 +1,16 @@
+# Binaries
+/scaffold-list
+/bin/
+
+# Go build cache
+/vendor/
+
+# Output files generated to /tmp or local dirs (not examples/)
+/tmp/
+*.gen.go
+
+# Editor and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
