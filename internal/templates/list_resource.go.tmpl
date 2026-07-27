@@ -20,14 +20,16 @@ package {{.PackageName}}
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-provider-google/google/registry"
 	transport_tpg "github.com/hashicorp/terraform-provider-google/google/transport"
 	"github.com/hashicorp/terraform-provider-google/google/tpgresource"
 )
 
-func dataSource{{.Name}}List() *schema.Resource {
+func DataSource{{.Name}}List() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSource{{.Name}}ListRead,
 		Schema: map[string]*schema.Schema{
@@ -40,6 +42,14 @@ func dataSource{{.Name}}List() *schema.Resource {
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"project": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						{{- range .Properties}}
 						{{template "schemaField" .}}
 						{{- end}}
@@ -48,6 +58,15 @@ func dataSource{{.Name}}List() *schema.Resource {
 			},
 		},
 	}
+}
+
+func init() {
+	registry.Schema{
+		Name:        "google_{{.PackageName}}_{{.Name | toSnake}}_list",
+		ProductName: "{{.PackageName}}",
+		Type:        registry.SchemaTypeDataSource,
+		Schema:      DataSource{{.Name}}List(),
+	}.Register()
 }
 
 func dataSource{{.Name}}ListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -78,7 +97,13 @@ func dataSource{{.Name}}ListRead(ctx context.Context, d *schema.ResourceData, me
 		if !ok {
 			break
 		}
-		items = append(items, pageItems...)
+		for _, raw := range pageItems {
+			item, ok := raw.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			items = append(items, flatten{{.Name}}ListItem(item, project))
+		}
 		token, _ = res["nextPageToken"].(string)
 		if token == "" {
 			break
@@ -87,6 +112,21 @@ func dataSource{{.Name}}ListRead(ctx context.Context, d *schema.ResourceData, me
 	if err := d.Set("{{.Name | toSnake}}s", items); err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(project)
+	d.SetId(fmt.Sprintf("projects/%s/managedZones", project))
 	return nil
+}
+
+func flatten{{.Name}}ListItem(item map[string]interface{}, project string) map[string]interface{} {
+	name, _ := item["name"].(string)
+	idStr, _ := item["id"].(string)
+	idInt, _ := strconv.ParseInt(idStr, 10, 64)
+	return map[string]interface{}{
+		"id":              fmt.Sprintf("projects/%s/managedZones/%s", project, name),
+		"name":            name,
+		"dns_name":        item["dnsName"],
+		"description":     item["description"],
+		"visibility":      item["visibility"],
+		"managed_zone_id": idInt,
+		"project":         project,
+	}
 }
