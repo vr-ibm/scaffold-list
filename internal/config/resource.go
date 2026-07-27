@@ -8,4 +8,5 @@ type ResourceConfig struct {
 	Kind        string `yaml:"kind"`
 	Properties  []Property
 	APIBaseURL  string // from product.yaml GA version base_url
+	PackageName string // lowercased product name (e.g. "dns")
 }
