@@ -1,3 +1,20 @@
+{{- define "schemaField"}}
+"{{.Name | toSnake}}": {
+	Type:     {{.Type | toSchemaType}},
+	Computed: true,
+	{{- if eq .Type "NestedObject"}}
+	Elem: &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			{{- range .Properties}}
+			{{template "schemaField" .}}
+			{{- end}}
+		},
+	},
+	{{- else if eq .Type "Array"}}
+	Elem: &schema.Schema{Type: schema.TypeString},
+	{{- end}}
+},
+{{- end}}
 package google
 
 import (
@@ -19,10 +36,9 @@ func dataSource{{.Name}}List() *schema.Resource {
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"name": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
+						{{- range .Properties}}
+						{{template "schemaField" .}}
+						{{- end}}
 					},
 				},
 			},

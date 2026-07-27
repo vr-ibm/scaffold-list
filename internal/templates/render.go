@@ -4,13 +4,26 @@ import (
 	"os"
 	"strings"
 	"text/template"
+	"unicode"
 
 	"github.com/vr-ibm/scaffold-list/internal/config"
 )
 
 func Render(cfg *config.ResourceConfig, outputDir string) error {
 	funcMap := template.FuncMap{
-		"toSnake": ToSnake,
+		"toSnake": func(s string) string { return ToSnake(s) },
+		"toSchemaType": func(t string) string {
+			switch t {
+			case "Boolean":
+				return "schema.TypeBool"
+			case "Integer":
+				return "schema.TypeInt"
+			case "Array", "NestedObject":
+				return "schema.TypeList"
+			default:
+				return "schema.TypeString"
+			}
+		},
 	}
 	tmpl, err := template.New("list_resource.go.tmpl").Funcs(funcMap).ParseFiles("internal/templates/list_resource.go.tmpl")
 	if err != nil {
@@ -26,12 +39,15 @@ func Render(cfg *config.ResourceConfig, outputDir string) error {
 }
 
 func ToSnake(s string) string {
-	var result strings.Builder
+	// normalise known acronyms to title-case so they produce a single word
+	s = strings.ReplaceAll(s, "ID", "Id")
+	s = strings.ReplaceAll(s, "DNS", "Dns")
+	var result []rune
 	for i, r := range s {
-		if r >= 'A' && r <= 'Z' && i > 0 {
-			result.WriteRune('_')
+		if i > 0 && unicode.IsUpper(r) {
+			result = append(result, '_')
 		}
-		result.WriteRune(r | 32)
+		result = append(result, unicode.ToLower(r))
 	}
-	return result.String()
+	return string(result)
 }

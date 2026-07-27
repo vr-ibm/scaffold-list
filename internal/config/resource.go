@@ -6,4 +6,5 @@ type ResourceConfig struct {
 	BaseURL     string `yaml:"base_url"`
 	IDFormat    string `yaml:"id_format"`
 	Kind        string `yaml:"kind"`
+	Properties  []Property
 }
