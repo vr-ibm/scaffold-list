@@ -15,5 +15,6 @@ func LoadResource(mmPath, resourceFile string) (*ResourceConfig, error) {
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, err
 	}
+	cfg.Properties = ParsePropertiesFromYAML(string(data))
 	return &cfg, nil
 }
