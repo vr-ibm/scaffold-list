@@ -24,6 +24,22 @@ func Render(cfg *config.ResourceConfig, outputDir string) error {
 				return "schema.TypeString"
 			}
 		},
+		// toFmtURL converts a MM-style URL (e.g. "projects/{{project}}/zones")
+		// into a fmt.Sprintf format string (e.g. "projects/%s/zones").
+		"toFmtURL": func(s string) string {
+			s = strings.ReplaceAll(s, "{{project}}", "%s")
+			s = strings.ReplaceAll(s, "{{name}}", "%s")
+			return s
+		},
+		// toLowerCamel lowercases just the first rune (ManagedZone → managedZone).
+		"toLowerCamel": func(s string) string {
+			if s == "" {
+				return s
+			}
+			r := []rune(s)
+			r[0] = unicode.ToLower(r[0])
+			return string(r)
+		},
 	}
 	tmpl, err := template.New("list_resource.go.tmpl").Funcs(funcMap).ParseFiles("internal/templates/list_resource.go.tmpl")
 	if err != nil {
