@@ -7,4 +7,5 @@ type ResourceConfig struct {
 	IDFormat    string `yaml:"id_format"`
 	Kind        string `yaml:"kind"`
 	Properties  []Property
+	APIBaseURL  string // from product.yaml GA version base_url
 }

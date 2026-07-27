@@ -19,6 +19,8 @@ package google
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -47,6 +49,36 @@ func dataSource{{.Name}}List() *schema.Resource {
 }
 
 func dataSource{{.Name}}ListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	// TODO: implement
+	config := meta.(*Config)
+	project, err := getProject(d, config)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	url := fmt.Sprintf("{{.APIBaseURL}}{{.BaseURL | toFmtURL}}", project)
+	var items []interface{}
+	token := ""
+	for {
+		params := map[string]string{}
+		if token != "" {
+			params["pageToken"] = token
+		}
+		res, err := sendRequest(config, "GET", project, url, config.userAgent, nil)
+		if err != nil {
+			return diag.FromErr(fmt.Errorf("error listing {{.Name}}s: %w", err))
+		}
+		pageItems, ok := res["{{.Name | toLowerCamel}}s"].([]interface{})
+		if !ok {
+			break
+		}
+		items = append(items, pageItems...)
+		token, _ = res["nextPageToken"].(string)
+		if token == "" {
+			break
+		}
+	}
+	if err := d.Set("{{.Name | toSnake}}s", items); err != nil {
+		return diag.FromErr(err)
+	}
+	d.SetId(project)
 	return nil
 }
