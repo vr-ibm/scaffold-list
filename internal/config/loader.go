@@ -9,7 +9,7 @@ import (
 )
 
 func LoadResource(mmPath, resourceFile string) (*ResourceConfig, error) {
-	resourcePath := mmPath + "/mmv1/products/" + resourceFile
+	resourcePath := filepath.Join(mmPath, "mmv1", "products", resourceFile)
 	data, err := os.ReadFile(resourcePath)
 	if err != nil {
 		return nil, err

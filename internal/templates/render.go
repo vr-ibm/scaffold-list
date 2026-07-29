@@ -1,7 +1,9 @@
 package templates
 
 import (
+	"embed"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 	"unicode"
@@ -9,9 +11,12 @@ import (
 	"github.com/vr-ibm/scaffold-list/internal/config"
 )
 
+//go:embed list_resource.go.tmpl
+var templateFS embed.FS
+
 func Render(cfg *config.ResourceConfig, outputDir string) error {
 	funcMap := template.FuncMap{
-		"toSnake": func(s string) string { return ToSnake(s) },
+		"toSnake": ToSnake,
 		"toSchemaType": func(t string) string {
 			switch t {
 			case "Boolean":
@@ -41,11 +46,17 @@ func Render(cfg *config.ResourceConfig, outputDir string) error {
 			return string(r)
 		},
 	}
-	tmpl, err := template.New("list_resource.go.tmpl").Funcs(funcMap).ParseFiles("internal/templates/list_resource.go.tmpl")
+
+	tmplContent, err := templateFS.ReadFile("list_resource.go.tmpl")
 	if err != nil {
 		return err
 	}
-	outFile := outputDir + "/data_source_" + ToSnake(cfg.Name) + "_list.go"
+	tmpl, err := template.New("list_resource.go.tmpl").Funcs(funcMap).Parse(string(tmplContent))
+	if err != nil {
+		return err
+	}
+
+	outFile := filepath.Join(outputDir, "data_source_"+ToSnake(cfg.Name)+"_list.go")
 	f, err := os.Create(outFile)
 	if err != nil {
 		return err

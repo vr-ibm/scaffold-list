@@ -112,7 +112,7 @@ func dataSource{{.Name}}ListRead(ctx context.Context, d *schema.ResourceData, me
 	if err := d.Set("{{.Name | toSnake}}s", items); err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(fmt.Sprintf("projects/%s/managedZones", project))
+	d.SetId(fmt.Sprintf("projects/%s/{{.Name | toLowerCamel}}s", project))
 	return nil
 }
 
